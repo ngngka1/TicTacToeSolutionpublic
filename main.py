@@ -92,7 +92,21 @@ def valid_move(row_num, col_num, game, players, rounds): # this function returns
     else:
         return attack(row_num, col_num, game[:][:], players[rounds % 2], players[(rounds + 1) % 2])
     
-        
+def prompt(game: list, players: dict):
+    print("Game Grid: ")
+    for row in game:
+        print(" ".join(row))
+    print("Player 1: " + players[0])
+    print("Player 2: " + players[1])
+    inputting = True
+    while inputting:
+        selection = (input("Are you Player 1 or 2? (1/2)"))
+        if selection == "1":
+            return players[0]
+        elif selection == "2":
+            return players[1]
+        else:
+            print("Invalid input! Please input again.")
     
 def init_file():
     stepfile = open("step.csv", "w")
@@ -105,8 +119,8 @@ def main():
     process = psutil.Process()
     init_file()
     game = [
-        ["X", "_", "_"],
-        ["_", "O", "_"],
+        ["_", "_", "_"],
+        ["_", "_", "_"],
         ["_", "_", "_"]
     ]
     
@@ -115,13 +129,13 @@ def main():
         1: "X" # player 2
     }
     
+    user = prompt(game, PLAYERS)
+    
     rounds = 0
     for row in game:
         for element in row:
             if element != "_":
                 rounds += 1
-    
-    user = PLAYERS[0]
 
     result = backtrack(game[0:], PLAYERS, rounds, user)
     print(result)
