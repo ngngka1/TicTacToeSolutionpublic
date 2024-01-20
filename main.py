@@ -10,13 +10,13 @@ import curses
             
 def backtrack(game: list, players: dict, rounds: int, user: str) -> list:
     result = []
-    if rounds >= 4 and win_check(game, user) and not win_check(game, players[1]):
+    if rounds >= 4 and win_check(game, user):
         for row in game:
             result.append(row[:]) # this is to avoid elements in result have the same reference to elements in game
         return [result]
     for row_num, row in enumerate(game):
         for col_num, element in enumerate(row):
-            if element == "_" and (rounds == 0 or valid_move(row_num, col_num, game[:][:], players, rounds)):
+            if element == "_" and (rounds <= 1 or valid_move(row_num, col_num, game[:][:], players, rounds)):
                 game[row_num][col_num] = players[rounds % 2]
                 result = backtrack(game, players, rounds + 1, user)
                 game[row_num][col_num] = "_"
@@ -105,15 +105,16 @@ def input_gamegrid(stdscr, game: list, players: dict):
     while inputting:
         stdscr.clear()
         stdscr.addstr(0, 0, "Current Game Grid: ")
+        stdscr.addstr(1, 0, f"Chess to be placed: {players[rounds % 2]}")
         for i, row in enumerate(game, 0):
-            stdscr.addstr(1 + i, 0, " ".join(row))
-        stdscr.addstr(2 + i, 0, f"Chess to be placed next: {players[rounds % 2]}")
+            stdscr.addstr(2 + i, 0, " ".join(row))
         stdscr.refresh()
         key = stdscr.getch()
         if key == ord("q"):
             game[row_num][col_num] = game[row_num][col_num][1]
             break
-        elif key == curses.KEY_RIGHT and col_num + 1 < 3:
+        
+        if key == curses.KEY_RIGHT and col_num + 1 < 3:
             game[row_num][col_num] = game[row_num][col_num][1]
             col_num += 1
             game[row_num][col_num] = "{" + game[row_num][col_num] +"}"
@@ -129,7 +130,8 @@ def input_gamegrid(stdscr, game: list, players: dict):
             game[row_num][col_num] = game[row_num][col_num][1]
             row_num -= 1
             game[row_num][col_num] = "{" + game[row_num][col_num] +"}"
-        if key == ord("\n"):
+
+        if key == ord("\n") and "_" in game[row_num][col_num] :
             game[row_num][col_num] = players[rounds % 2]
             rounds += 1
             if col_num < 2:
@@ -137,7 +139,10 @@ def input_gamegrid(stdscr, game: list, players: dict):
             elif row_num < 2:
                 row_num += 1
             else:
-                break
+                if rounds >= 8:
+                    break
+                row_num = 0
+                col_num = 0
             game[row_num][col_num] = "{" + game[row_num][col_num] +"}"
             
     curses.endwin()
@@ -151,8 +156,8 @@ def prompt(game: list, players: dict):
     while inputting:
         print("Player 1: " + players[0])
         print("Player 2: " + players[1])
-        selection = (input("Are you Player 1 or 2? (1/2/s)"))
         print("(input s if you want to switch the symbols for players)")
+        selection = (input("Are you Player 1 or 2? (1/2/s)"))
         if selection == "1":
             return players[0]
         elif selection == "2":
@@ -192,8 +197,8 @@ def main():
         1: "X" # player 2
     }
     
-    starting_rounds = curses.wrapper(input_gamegrid, game, players)
     user = prompt(game, players)
+    starting_rounds = curses.wrapper(input_gamegrid, game, players)
     result = backtrack(game[0:], players, starting_rounds, user)
     index = 0 # this is to keep track of the index of result to be outputted
     #Note: result stores steps from the ongoing round to end
