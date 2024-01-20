@@ -1,29 +1,25 @@
-You are Player 1 (X)
-Round 1:
-X _ _
-_ _ _
-_ _ _
+You are Player 1 (O)
 Round 2:
-X O _
+O _ X
 _ _ _
 _ _ _
 Round 3:
-X O _
-X _ _
+O _ X
+O _ _
 _ _ _
 Round 4:
-X O _
-X _ _
-O _ _
-Round 5:
-X O _
-X X _
-O _ _
-Round 6:
-X O _
-X X O
-O _ _
-Round 7:
-X O _
-X X O
 O _ X
+O _ _
+X _ _
+Round 5:
+O _ X
+O O _
+X _ _
+Round 6:
+O _ X
+O O X
+X _ _
+Round 7:
+O _ X
+O O X
+X _ O

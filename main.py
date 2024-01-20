@@ -1,16 +1,14 @@
 # It is planned that this program will be converted into javascript and user can input the game grid easier with a webpage layout.
 
 # Tic tac toe is a game where the first player has the chance to not lose 100% if he knows all winning combinations.
-import time
 import psutil
 import csv
 import sys
 import curses
 
-            
-def backtrack(game: list, players: dict, rounds: int, user: str) -> list:
+def backtrack(game: list, players: dict, rounds: int, user: str, opponent: str) -> list:
     result = []
-    if rounds >= 4 and win_check(game, user):
+    if rounds >= 4 and win_check(game, user) and not win_check(game, opponent):
         for row in game:
             result.append(row[:]) # this is to avoid elements in result have the same reference to elements in game
         return [result]
@@ -18,7 +16,7 @@ def backtrack(game: list, players: dict, rounds: int, user: str) -> list:
         for col_num, element in enumerate(row):
             if element == "_" and (rounds <= 1 or valid_move(row_num, col_num, game[:][:], players, rounds)):
                 game[row_num][col_num] = players[rounds % 2]
-                result = backtrack(game, players, rounds + 1, user)
+                result = backtrack(game, players, rounds + 1, user, opponent)
                 game[row_num][col_num] = "_"
                 if result:
                     temp = []
@@ -159,21 +157,18 @@ def prompt(game: list, players: dict):
         print("(input s if you want to switch the symbols for players)")
         selection = (input("Are you Player 1 or 2? (1/2/s)"))
         if selection == "1":
-            return players[0]
+            return players[0], players[1]
         elif selection == "2":
-            return players[1]
+            return players[1], players[0]
         elif selection == "s":
             players[0], players[1] = players[1], players[0]
         else:
             print("Invalid input! Please input again.")
     
-def print_result(result, rounds):
-    if rounds < len(result):
-        print(f"Round {rounds}:")
-        for row in result[rounds]:
-            print(" ".join(row))
-    else:
-        sys.exit()
+def print_result(result, rounds, index):
+    print(f"Round {rounds + index}:")
+    for row in result[index]:
+        print(" ".join(row))
     
           
 def init_file():
@@ -183,8 +178,6 @@ def init_file():
     permufile.close()
     
 def main():
-    #time_start = round(time.time(), 8)
-    #process = psutil.Process()
     init_file()
     game = [
         ["_", "_", "_"],
@@ -197,14 +190,14 @@ def main():
         1: "X" # player 2
     }
     
-    user = prompt(game, players)
+    user, opponent = prompt(game, players)
     starting_rounds = curses.wrapper(input_gamegrid, game, players)
-    result = backtrack(game[0:], players, starting_rounds, user)
+    result = backtrack(game[0:], players, starting_rounds, user, opponent)
     index = 0 # this is to keep track of the index of result to be outputted
-    #Note: result stores steps from the ongoing round to end
+    #Note: result only stores steps from the ongoing round to end
     
     if result:   
-        with open("step.csv", "a", newline='') as file:
+        with open("step.csv", "a", newline='') as file: # simply writing to file for documentation, can be removed
             writer = csv.writer(file, delimiter=" ")
             writer.writerow(f"You are Player 1 ({user})".split())
             for i, gamegrid in enumerate(result, starting_rounds):
@@ -212,32 +205,36 @@ def main():
                 for row in gamegrid:
                     writer.writerow(row)
                     
-        with open("move.csv", "a", newline='') as file:
+        with open("move.csv", "a", newline='') as file: # simply writing to file for documentation, can be removed
             writer = csv.writer(file, delimiter=" ")
             index += 1
-            for row in result[index]:
+            for row in result[index + 1]:
                 writer.writerow(row)
             file.write("\n")
-        print_result(result, index)
+            
+        print_result(result, starting_rounds, index)
+        continuecheck = True
+        while continuecheck:
+            if index + 1 < len(result):
+                cont = input("Continue to check solutions for this game grid? (y/n)")
+            else:
+                input()
+                sys.exit()
+                
+            if cont == "y":
+                index += 1
+                print_result(result, starting_rounds, index)
+            elif cont == "n":
+                sys.exit()
+            else:
+                print("Invalid input! Please input again.")
     else:
         print("No 100% win rate move in this situation!")
-        
-    checking = True
-    while checking:
-        cont = input("Continue to check solutions? (y/n)")
-        if cont == "y":
-            index += 1
-            print_result(result, index)
-        elif cont == "n":
-            checking = False
-            sys.exit()
-        else:
-            print("Invalid input! Please input again.")
-
-    #time_elapsed = (round(time.time(), 8) - time_start) * 1000
-    #print(f"%.4f ms" % time_elapsed)
-    #memory_usage = process.memory_info().rss / 1024 / 1024 # Convert to kilobytes
-    #print("Memory usage:", memory_usage, "MB")
+        input()
+        sys.exit()
     
 if __name__ == "__main__":
+    #process = psutil.Process()
     main()
+    #memory_usage = process.memory_info().rss / 1024 / 1024 # Convert to kilobytes
+    #print("Memory usage:", memory_usage, "MB")
