@@ -11,13 +11,13 @@ import copy
             
 def backtrack(game: list, players: dict, rounds: int, user: str) -> list:
     result = []
-    if rounds >= 4 and win_check(game, user):
+    if rounds >= 4 and win_check(game, user) and not win_check(game, players[1]):
         for row in game:
             result.append(row[:]) # this is to avoid elements in result have the same reference to elements in game
         return [result]
     for row_num, row in enumerate(game):
         for col_num, element in enumerate(row):
-            if element == "_" and valid_move(row_num, col_num, game[:][:], players, rounds):
+            if element == "_" and (rounds == 0 or valid_move(row_num, col_num, game[:][:], players, rounds)):
                 game[row_num][col_num] = players[rounds % 2]
                 result = backtrack(game, players, rounds + 1, user)
                 game[row_num][col_num] = "_"
@@ -44,45 +44,53 @@ def win_check(game: list, player: str):
     
     return False
 
-def block(row_num, col_num, game: list, opponent): # this return the pos the player has to block the opponent from winning
+def check_checkmated(row_num, col_num, game: list, player): # this return the pos the player has to block the opponent from winning
     pos = []
-    for row_num, row in enumerate(game):
-        for col_num, element in enumerate(row):
-            if game[row_num][col_num] == "_":
-                game[row_num][col_num] = opponent
-                if win_check(game, opponent):
-                    pos = (row_num, col_num)
-                game[row_num][col_num] = "_"
+    for i, row in enumerate(game):
+        for j, element in enumerate(row):
+            if game[i][j] == "_":
+                game[i][j] = player
+                if win_check(game, player):
+                    pos = (i, j)
+                game[i][j] = "_"
             if pos:
-                return pos == [row_num, col_num]
-    return True # return True because don't need to block the opponent
+                return pos
+    return pos # return False because don't need to block the opponent
 
 def attack(target_row, target_col, game, curr_player, opponent): #
-    valid_attack = []
     for i, row in enumerate(game):
         for j, element in enumerate(row):
             if (game[i][j] == "_" 
                 and (
-                    game[i][j + 1 - len(row)] == game[i][j + 2 - len(row)] != opponent # horizontal
-                    or game[i + 1 - len(game)][j] == game[i + 2 - len(game)][j] != opponent # vertical # this line returned true when i =0, j = 1 because direction
-                    or (i == j and game[i + 1 - len(game)][j + 1 - len(row)] == game[i + 2 - len(game)][j + 2 - len(row)] != opponent)
-                    or (abs(i-j) == 2 and game[len(game) - i - 1][j + 1 - len(row)] == game[len(game) - i - 2][j + 2 - len(row)] != opponent)
+                    # approach of checking set len == 2 works because cases like XX_ and OOX are eliminated beforehand
+                    len(set([game[i][j + 1 - len(row)], game[i][j + 2 - len(row)], element])) == 2 # horizontal
+                    or len(set([game[i + 1 - len(game)][j], game[i + 2 - len(game)][j], element])) == 2 # vertical #
+                    or (i == j and len(set([game[i + 1 - len(game)][j + 1 - len(row)], game[i + 2 - len(game)][j + 2 - len(row)], element])) == 2)
+                    or (abs(i-j) == 2 and len(set([game[len(game) - i - 1][j + 1 - len(row)], game[len(game) - i - 2][j + 2 - len(row)], element])) == 2)
                     )
                 ):
-                valid_attack.append((i, j))
-                
-    for element in valid_attack:
-        if element == (0, 1): 
-            print("WRONG")
-        if element == (target_row, target_col):
-            return True
+                if (i, j) == (target_row, target_col):
+                    return True
     return False
 
 def valid_move(row_num, col_num, game, players, rounds): # this function returns true if the move is valid(block or attack)
-    if rounds >= 4:
-        if block(row_num, col_num, game[:][:], players[(rounds + 1) % 2]):
-            return False
-    return attack(row_num, col_num, game[:][:], players[rounds % 2], players[(rounds + 1) % 2])
+    # priority of moves:
+    # 1. win
+    # 2. block opponent who is going to win
+    # 3. make constructive moves(attack) where 3 consecutive grid contain curr_player and does not contain opponent
+    winable_pos = check_checkmated(row_num, col_num, game[:][:], players[rounds % 2])
+    if winable_pos and winable_pos == (row_num, col_num):
+        return True
+    elif winable_pos:
+        return False
+    
+    opponent_winnable_pos = check_checkmated(row_num, col_num, game[:][:], players[(rounds + 1) % 2]) # check if the opponent is checkmating you
+    if opponent_winnable_pos and opponent_winnable_pos == (row_num, col_num):
+        return True
+    elif opponent_winnable_pos:
+        return False
+    else:
+        return attack(row_num, col_num, game[:][:], players[rounds % 2], players[(rounds + 1) % 2])
     
         
     
@@ -97,8 +105,8 @@ def main():
     process = psutil.Process()
     init_file()
     game = [
-        ["O", "_", "X"],
-        ["_", "_", "_"],
+        ["X", "_", "_"],
+        ["_", "O", "_"],
         ["_", "_", "_"]
     ]
     
@@ -117,22 +125,23 @@ def main():
 
     result = backtrack(game[0:], PLAYERS, rounds, user)
     print(result)
-
-    
-    with open("step.csv", "a", newline='') as file:
-        writer = csv.writer(file, delimiter=" ")
-        writer.writerow([f"You are Player 1 ({user})"])
-        for i, gamegrid in enumerate(result):
-            writer.writerow([f"Round {i + rounds}:"])
-            for row in gamegrid:
-                writer.writerow(row)
-                
-        with open("permutation.csv", "a", newline='') as file:
-            writer = csv.writer(file)
-            for row in result[-1]:
-                writer.writerow(" ".join(row))
-            file.write("\n")
-                
+    if result:   
+        with open("step.csv", "a", newline='') as file:
+            writer = csv.writer(file, delimiter=" ")
+            writer.writerow(f"You are Player 1 ({user})".split())
+            for i, gamegrid in enumerate(result):
+                writer.writerow(f"Round {i + rounds}:".split())
+                for row in gamegrid:
+                    writer.writerow(row)
+                    
+            with open("permutation.csv", "a", newline='') as file:
+                writer = csv.writer(file, delimiter=" ")
+                for row in result[-1]:
+                    writer.writerow(row)
+                file.write("\n")
+    else:
+        print("Unwinable in this situation!")
+        
     time_elapsed = (round(time.time(), 8) - time_start) * 1000
     print(f"%.4f ms" % time_elapsed)
     
