@@ -5,8 +5,6 @@ import time
 import psutil
 import csv
 import sys
-import os
-import copy
 
             
 def backtrack(game: list, players: dict, rounds: int, user: str) -> list:
@@ -108,6 +106,13 @@ def prompt(game: list, players: dict):
         else:
             print("Invalid input! Please input again.")
     
+def print_result():
+    with open("step.csv", newline="") as result_file:
+        reader = csv.reader(result_file, delimiter=" ")
+        for row in reader:
+            print(" ".join(row))
+        
+    
 def init_file():
     stepfile = open("step.csv", "w")
     stepfile.close()
@@ -138,7 +143,6 @@ def main():
                 rounds += 1
 
     result = backtrack(game[0:], PLAYERS, rounds, user)
-    print(result)
     if result:   
         with open("step.csv", "a", newline='') as file:
             writer = csv.writer(file, delimiter=" ")
@@ -148,19 +152,31 @@ def main():
                 for row in gamegrid:
                     writer.writerow(row)
                     
-            with open("permutation.csv", "a", newline='') as file:
-                writer = csv.writer(file, delimiter=" ")
-                for row in result[-1]:
-                    writer.writerow(row)
-                file.write("\n")
+        with open("permutation.csv", "a", newline='') as file:
+            writer = csv.writer(file, delimiter=" ")
+            for row in result[-1]:
+                writer.writerow(row)
+            file.write("\n")
+        print_result()
     else:
         print("Unwinable in this situation!")
         
-    time_elapsed = (round(time.time(), 8) - time_start) * 1000
-    print(f"%.4f ms" % time_elapsed)
-    
-    memory_usage = process.memory_info().rss / 1024 / 1024 # Convert to kilobytes
-    print("Memory usage:", memory_usage, "MB")
+    checking = True
+    while checking:
+        cont = input("Continue to check solutions? (y/n)")
+        if cont == "y":
+            checking = False
+            main()
+        elif cont == "n":
+            checking = False
+            sys.exit()
+        else:
+            print("Invalid input! Please input again.")
+
+    #time_elapsed = (round(time.time(), 8) - time_start) * 1000
+    #print(f"%.4f ms" % time_elapsed)
+    #memory_usage = process.memory_info().rss / 1024 / 1024 # Convert to kilobytes
+    #print("Memory usage:", memory_usage, "MB")
     
 if __name__ == "__main__":
     main()
