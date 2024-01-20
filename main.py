@@ -5,6 +5,7 @@ import psutil
 import csv
 import sys
 import curses
+import os
 
 def backtrack(game: list, players: dict, rounds: int, user: str, opponent: str) -> list:
     result = []
@@ -95,6 +96,7 @@ def valid_move(row_num, col_num, game, players, rounds): # this function returns
 def input_gamegrid(stdscr, game: list, players: dict):
     stdscr = curses.initscr()
     stdscr.nodelay(0)
+    curses.curs_set(0)
     row_num = 0
     col_num = 0
     rounds = 0
@@ -102,10 +104,11 @@ def input_gamegrid(stdscr, game: list, players: dict):
     inputting = True
     while inputting:
         stdscr.clear()
-        stdscr.addstr(0, 0, "Current Game Grid: ")
-        stdscr.addstr(1, 0, f"Chess to be placed: {players[rounds % 2]}")
+        stdscr.addstr(0, 0, "Current Game Grid:     (Input \"q\" to exit)")
+        stdscr.addstr(1, 0, "")
+        stdscr.addstr(2, 0, f"Chess to be placed: {players[rounds % 2]}")
         for i, row in enumerate(game, 0):
-            stdscr.addstr(2 + i, 0, " ".join(row))
+            stdscr.addstr(3 + i, 0, " ".join(list(element.center(3) for element in row)))
         stdscr.refresh()
         key = stdscr.getch()
         if key == ord("q"):
@@ -146,15 +149,14 @@ def input_gamegrid(stdscr, game: list, players: dict):
     curses.endwin()
     return rounds
         
-def prompt(game: list, players: dict):
-    print("The Current Game Grid:")
-    for row in game:
-        print(" ".join(row))
+def input_user(game: list, players: dict):
     inputting = True
     while inputting:
+        os.system('cls||clear')
+        print("Symbols for:        (Input \"s\" if you want to switch the symbols for players)")
         print("Player 1: " + players[0])
         print("Player 2: " + players[1])
-        print("(input s if you want to switch the symbols for players)")
+        print()
         selection = (input("Are you Player 1 or 2? (1/2/s)"))
         if selection == "1":
             return players[0], players[1]
@@ -190,12 +192,12 @@ def main():
         1: "X" # player 2
     }
     
-    user, opponent = prompt(game, players)
+    user, opponent = input_user(game, players)
     starting_rounds = curses.wrapper(input_gamegrid, game, players)
     result = backtrack(game[0:], players, starting_rounds, user, opponent)
     index = 0 # this is to keep track of the index of result to be outputted
     #Note: result only stores steps from the ongoing round to end
-    
+
     if result:   
         with open("step.csv", "a", newline='') as file: # simply writing to file for documentation, can be removed
             writer = csv.writer(file, delimiter=" ")
@@ -212,6 +214,7 @@ def main():
                 writer.writerow(row)
             file.write("\n")
             
+        os.system('cls||clear')
         print_result(result, starting_rounds, index)
         continuecheck = True
         while continuecheck:
@@ -223,6 +226,7 @@ def main():
                 
             if cont == "y":
                 index += 1
+                os.system('cls||clear')
                 print_result(result, starting_rounds, index)
             elif cont == "n":
                 sys.exit()
