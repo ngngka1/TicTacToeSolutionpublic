@@ -1,13 +1,12 @@
-# It is planned that this program will be converted into javascript and user can input the game grid easier with a webpage layout.
-
 # Tic tac toe is a game where the first player has the chance to not lose 100% if he knows all winning combinations.
+
 import psutil
 import csv
 import sys
 import curses
 import os
 
-def backtrack(game: list, players: dict, rounds: int, user: str, opponent: str) -> list:
+def backtrack(game: list, players: dict, rounds: int, user: str, opponent: str) -> list: # return a list of steps to win
     result = []
     if rounds >= 4 and win_check(game, user) and not win_check(game, opponent):
         for row in game:
@@ -15,7 +14,7 @@ def backtrack(game: list, players: dict, rounds: int, user: str, opponent: str) 
         return [result]
     for row_num, row in enumerate(game):
         for col_num, element in enumerate(row):
-            if element == "_" and (rounds <= 1 or valid_move(row_num, col_num, game[:][:], players, rounds)):
+            if element == "_" and (rounds <= 1 or valid_move_check(row_num, col_num, game[:][:], players, rounds)):
                 game[row_num][col_num] = players[rounds % 2]
                 result = backtrack(game, players, rounds + 1, user, opponent)
                 game[row_num][col_num] = "_"
@@ -26,7 +25,7 @@ def backtrack(game: list, players: dict, rounds: int, user: str, opponent: str) 
                     return [temp] + result
     return result
             
-def win_check(game: list, player: str):
+def win_check(game: list, player: str) -> bool: # return true/false if the player has won
     for row in game: # check horizontal win
         if row[0] == row[1] == row[2] == player:
             return True
@@ -42,31 +41,36 @@ def win_check(game: list, player: str):
     
     return False
 
-def check_checkmated(row_num, col_num, game: list, player): # this return the pos the player has to block the opponent from winning
+def checkmated_position(game: list, player) -> list: # return the position of winable position
     pos = []
+    # this loops through each grid in game, and check if placing a chess on that grid
+    # can result in a win, if yes, return the position of the grid
     for i, row in enumerate(game):
         for j, element in enumerate(row):
-            if game[i][j] == "_":
+            if element == "_":
                 game[i][j] = player
                 if win_check(game, player):
                     pos = (i, j)
                 game[i][j] = "_"
             if pos:
                 return pos
-    return pos # return False because don't need to block the opponent
+    return pos 
 
-def attack(target_row, target_col, game, curr_player, opponent): #
+def valid_attack_check(target_row, target_col, game, curr_player, opponent) -> bool: # return true if the target_row, target_col is a valid attack position
     for i, row in enumerate(game):
         for j, element in enumerate(row):
-            if game[i][j] == "_":
-                rowset = set([game[i][j + 1 - len(row)], game[i][j + 2 - len(row)], element])
-                colset = set([game[i + 1 - len(game)][j], game[i + 2 - len(game)][j], element])
-                descending_cross = set([game[i + 1 - len(game)][j + 1 - len(row)], game[i + 2 - len(game)][j + 2 - len(row)], element])
-                ascending_cross = set([game[len(game) - i - 1][j + 1 - len(row)], game[len(game) - i - 2][j + 2 - len(row)], element])
+            if element == "_":
+                # The sets below are used to check whether 3 grids in horizontal, vertical or diagonal
+                # contain only "_" and the chess of the attacking player "O/X"
+                rowset = set([game[i][j + 1 - len(row)], game[i][j + 2 - len(row)], element]) # "-" horizontal
+                colset = set([game[i + 1 - len(game)][j], game[i + 2 - len(game)][j], element]) # "|" vertical
+                descending_cross = set([game[i + 1 - len(game)][j + 1 - len(row)], game[i + 2 - len(game)][j + 2 - len(row)], element]) # "\" diagonal
+                ascending_cross = set([game[len(game) - i - 1][j + 1 - len(row)], game[len(game) - i - 2][j + 2 - len(row)], element]) # "/" diagonal
                 if (
-                    # approach of checking set len == 2 works because cases like XX_ and OOX are eliminated beforehand
-                    (opponent not in rowset and len(rowset) == 2) # horizontal
-                    or (opponent not in colset and len(colset) == 2) # vertical
+                    # have to add an addition check "opponenet not in" to avoid invalid move examples 
+                    # like placing a chess "O" in _ _ X
+                    (opponent not in rowset and len(rowset) == 2)
+                    or (opponent not in colset and len(colset) == 2) 
                     or (i == j and opponent not in descending_cross and len(descending_cross) == 2)
                     or (abs(i-j) == 2 and opponent not in ascending_cross and len(ascending_cross) == 2)
                     ):
@@ -74,26 +78,26 @@ def attack(target_row, target_col, game, curr_player, opponent): #
                         return True
     return False
 
-def valid_move(row_num, col_num, game, players, rounds): # this function returns true if the move is valid(block or attack)
+def valid_move_check(row_num, col_num, game, players, rounds) -> bool: # this function returns true if the move is valid(block or attack)
     # priority of moves:
     # 1. win
     # 2. block opponent who is going to win
     # 3. make constructive moves(attack) where 3 consecutive grid contain curr_player and does not contain opponent
-    winable_pos = check_checkmated(row_num, col_num, game[:][:], players[rounds % 2])
+    winable_pos = checkmated_position(game[:][:], players[rounds % 2])
     if winable_pos and winable_pos == (row_num, col_num):
         return True
     elif winable_pos:
         return False
     
-    opponent_winnable_pos = check_checkmated(row_num, col_num, game[:][:], players[(rounds + 1) % 2]) # check if the opponent is checkmating you
+    opponent_winnable_pos = checkmated_position(game[:][:], players[(rounds + 1) % 2]) # check if the opponent is checkmating you
     if opponent_winnable_pos and opponent_winnable_pos == (row_num, col_num):
         return True
     elif opponent_winnable_pos:
         return False
     else:
-        return attack(row_num, col_num, game[:][:], players[rounds % 2], players[(rounds + 1) % 2])
+        return valid_attack_check(row_num, col_num, game[:][:], players[rounds % 2], players[(rounds + 1) % 2])
    
-def input_gamegrid(stdscr, game: list, players: dict):
+def input_gamegrid(stdscr, game: list, players: dict) -> int: # this function modifies game and return the current round number
     stdscr = curses.initscr()
     stdscr.nodelay(0)
     curses.curs_set(0)
@@ -149,7 +153,7 @@ def input_gamegrid(stdscr, game: list, players: dict):
     curses.endwin()
     return rounds
         
-def input_user(game: list, players: dict):
+def input_user(game: list, players: dict) -> tuple:
     inputting = True
     while inputting:
         os.system('cls||clear')
@@ -167,20 +171,19 @@ def input_user(game: list, players: dict):
         else:
             print("Invalid input! Please input again.")
     
-def print_result(result, rounds, index):
-    print(f"Round {rounds + index}:")
-    for row in result[index]:
+def print_result(result, rounds, print_index) -> None:
+    print(f"Round {rounds + print_index}:")
+    for row in result[print_index]:
         print(" ".join(row))
-    
-          
-def init_file():
+        
+def init_file() -> None:
     stepfile = open("step.csv", "w")
     stepfile.close()
     permufile = open("move.csv", "w")
     permufile.close()
     
 def main():
-    init_file()
+    init_file() # the files were purely for my documentation purpose
     game = [
         ["_", "_", "_"],
         ["_", "_", "_"],
@@ -195,7 +198,7 @@ def main():
     user, opponent = input_user(game, players)
     starting_rounds = curses.wrapper(input_gamegrid, game, players)
     result = backtrack(game[0:], players, starting_rounds, user, opponent)
-    index = 0 # this is to keep track of the index of result to be outputted
+    print_index = 0 # this is to keep track of the index of result to be outputted
     #Note: result only stores steps from the ongoing round to end
 
     if result:   
@@ -215,17 +218,17 @@ def main():
             file.write("\n")
             
         os.system('cls||clear')
-        print_result(result, starting_rounds, index)
+        print_result(result, starting_rounds, print_index)
         continuecheck = True
         while continuecheck:
-            if index + 1 < len(result):
+            if print_index + 1 < len(result):
                 cont = input("Continue to check solutions for this game grid? (y/n)")
             else:
                 input()
                 sys.exit()
                 
             if cont == "y":
-                index += 1
+                print_index += 1
                 os.system('cls||clear')
                 print_result(result, starting_rounds, index)
             elif cont == "n":
