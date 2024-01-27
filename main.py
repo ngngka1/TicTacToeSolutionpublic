@@ -41,7 +41,7 @@ def win_check(game: list, player: str) -> bool: # return true/false if the playe
     
     return False
 
-def checkmated_position(game: list, player) -> list: # return the position of winable position
+def checkmated_position(game: list, player: str) -> list: # return the position of winable position
     pos = []
     # this loops through each grid in game, and check if placing a chess on that grid
     # can result in a win, if yes, return the position of the grid
@@ -56,7 +56,7 @@ def checkmated_position(game: list, player) -> list: # return the position of wi
                 return pos
     return pos 
 
-def valid_attack_check(target_row, target_col, game, curr_player, opponent) -> bool: # return true if the target_row, target_col is a valid attack position
+def valid_attack_check(target_row: int, target_col: int, game: list, opponent: str) -> bool: # return true if the target_row, target_col is a valid attack position
     for i, row in enumerate(game):
         for j, element in enumerate(row):
             if element == "_":
@@ -78,7 +78,7 @@ def valid_attack_check(target_row, target_col, game, curr_player, opponent) -> b
                         return True
     return False
 
-def valid_move_check(row_num, col_num, game, players, rounds) -> bool: # this function returns true if the move is valid(block or attack)
+def valid_move_check(row_num: int, col_num: int, game: list, players: dict, rounds: int) -> bool: # this function returns true if the move is valid(block or attack)
     # priority of moves:
     # 1. win
     # 2. block opponent who is going to win
@@ -153,7 +153,7 @@ def input_gamegrid(stdscr, game: list, players: dict) -> int: # this function mo
     curses.endwin()
     return rounds
         
-def input_user(game: list, players: dict) -> tuple:
+def input_user(players: dict) -> tuple:
     inputting = True
     while inputting:
         os.system('cls||clear')
@@ -195,7 +195,7 @@ def main():
         1: "X" # player 2
     }
     
-    user, opponent = input_user(game, players)
+    user, opponent = input_user(players)
     starting_rounds = curses.wrapper(input_gamegrid, game, players)
     result = backtrack(game[0:], players, starting_rounds, user, opponent)
     print_index = 0 # this is to keep track of the index of result to be outputted
