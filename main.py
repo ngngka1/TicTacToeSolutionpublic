@@ -210,12 +210,6 @@ def main():
                 for row in gamegrid:
                     writer.writerow(row)
                     
-        with open("move.csv", "a", newline='') as file: # simply writing to file for documentation, can be removed
-            writer = csv.writer(file, delimiter=" ")
-            index += 1
-            for row in result[index + 1]:
-                writer.writerow(row)
-            file.write("\n")
             
         os.system('cls||clear')
         print_result(result, starting_rounds, print_index)

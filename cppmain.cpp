@@ -315,16 +315,8 @@ ListNode* backtrack(ListNode* end, Game* game, const Player* user, const Player*
         {
             ListNode* currhead = new ListNode(pos[0], pos[1], currChess, end);
             game->grid[pos[0]][pos[1]] = currChess;
-            cout << "current grid: " << endl;
-            for (int i = 0; i < 3; i++)
-            {
-                for (int j = 0; j < 3; j++)
-                {
-                    cout << game->grid[i][j] << ' ';
-                }
-                cout << '\n';
-            }
             currhead->next = backtrack(end, game, user, opponent, players, rounds + 1);
+            game->grid[pos[0]][pos[1]] = '_';
             if (currhead->next != nullptr)
             {
                 return currhead;
@@ -332,7 +324,6 @@ ListNode* backtrack(ListNode* end, Game* game, const Player* user, const Player*
             else
             {
                 delete currhead;
-                game->grid[pos[0]][pos[1]] = '_';
             }
 
         }
@@ -366,10 +357,20 @@ int main()
     cout << "backtracking done\n";
 
     ofstream outputFile;
-    outputFile.open("move.csv");
+    outputFile.open("step.csv");
     while (head != end)
     {
-        outputFile << head->rowNum << ' ' << head->colNum << ' ' << head->placedChess << endl;
+        game->grid[head->rowNum][head->colNum] = head->placedChess;
+        outputFile << "\nrow: " << head->rowNum << "\ncolumn: " << head->colNum << "\nPlaced Chess: " << head->placedChess << endl;
+        cout << "steps: \n";
+        for (int i = 0; i < 3; i++)
+        {
+            for (int j = 0; j < 3; j++)
+            {
+                cout << game->grid[i][j] << " ";
+            }
+            cout << "\n";
+        }
         head = head->next;
     }
     outputFile.close();
