@@ -95,7 +95,7 @@ def valid_move_check(row_num: int, col_num: int, game: list, players: dict, roun
     elif opponent_winnable_pos:
         return False
     else:
-        return valid_attack_check(row_num, col_num, game[:][:], players[rounds % 2], players[(rounds + 1) % 2])
+        return valid_attack_check(row_num, col_num, game[:][:], players[(rounds + 1) % 2])
    
 def input_gamegrid(stdscr, game: list, players: dict) -> int: # this function modifies game and return the current round number
     stdscr = curses.initscr()
@@ -224,7 +224,7 @@ def main():
             if cont == "y":
                 print_index += 1
                 os.system('cls||clear')
-                print_result(result, starting_rounds, index)
+                print_result(result, starting_rounds, print_index)
             elif cont == "n":
                 sys.exit()
             else:

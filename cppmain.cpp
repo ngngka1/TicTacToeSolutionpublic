@@ -15,9 +15,9 @@ class Game
         Game()
         {
             grid = {
-                {'_', '_', '_'},
-                {'X', '_', '_'},
-                {'O', '_', '_'}
+                {'_', 'X', '_'},
+                {'_', 'O', '_'},
+                {'_', '_', '_'}
             };
         }
 
@@ -119,9 +119,9 @@ void inputPlayer(Player* &user, Player* &opponent, map<int, Player*>* players)
     }
 }
 
-void inputGrid()
+void inputGrid() // WIP
 {
-    return; // wip
+    return;
 }
 
 bool winCheck(const Game* game, const char checkedPlayerChess)
@@ -182,83 +182,60 @@ vector<vector<int>> validAttack(Game* game, const char currChess, const char nex
     vector<vector<int>> validAttackPositions = {};
     vector<vector<int>> blankGrid = {};
     
-    for (int rowNum = 0; rowNum < 3; rowNum++) // horizontal wins
+    for (int i = 0; i < 3; i++) // horizontal wins
     {
-        if (game->grid[rowNum][0] != nextChess && game->grid[rowNum][1] != nextChess && game->grid[rowNum][2] != nextChess)
+        if (game->grid[i][0] != nextChess && game->grid[i][1] != nextChess && game->grid[i][2] != nextChess)
         {
-            blankGrid = {};
             for (int colNum = 0; colNum < 3; colNum++)
             {
-                if (game->grid[rowNum][colNum] == '_')
+                if (game->grid[i][colNum] == '_')
                 {
-                    blankGrid.push_back({rowNum, colNum});
+                    blankGrid.push_back({i, colNum});
                 }
             }
             if (blankGrid.size() == 2)
             {
-                validAttackPositions.insert(validAttackPositions.end(), blankGrid.begin(), blankGrid.end());
+                validAttackPositions.push_back(blankGrid[0]);
+                validAttackPositions.push_back(blankGrid[1]);
             }
-        }
-    }
-
-    for (int colNum = 0; colNum < 3; colNum++) // horizontal wins
-    {
-        if (game->grid[0][colNum] != nextChess && game->grid[1][colNum] != nextChess && game->grid[2][colNum] != nextChess)
-        {
             blankGrid = {};
+        }
+
+        if (game->grid[0][i] != nextChess && game->grid[1][i] != nextChess && game->grid[2][i] != nextChess)
+        {
             for (int rowNum = 0; rowNum < 3; rowNum++)
             {
-                if (game->grid[rowNum][colNum] == '_')
+                if (game->grid[rowNum][i] == '_')
                 {
-                    blankGrid.push_back({rowNum, colNum});
+                    blankGrid.push_back({rowNum, i});
                 }
             }
             if (blankGrid.size() == 2)
             {
-                validAttackPositions.insert(validAttackPositions.end(), blankGrid.begin(), blankGrid.end());
+                validAttackPositions.push_back(blankGrid[0]);
+                validAttackPositions.push_back(blankGrid[1]);
             }
+            blankGrid = {};
         }
     }
 
-    if (game->grid[1][1] == '_') // note: if all cases of 2 connected chess are eliminated and middle grid is occupied, the game is forced to end in a draw.
+    for (int i = 0; i < 2; i++)
     {
-
-        blankGrid = {{1, 1}};
-        if (game->grid[0][0] != nextChess && game->grid[2][2] != nextChess)
+        if (game->grid[i * 2][0] != game->grid[1][1] && game->grid[1][1] != game->grid[2][i * 2] && game->grid[1][1] != nextChess)
         {
-            if (game->grid[0][0] == '_')
-            {
-                blankGrid.push_back({0, 0});
-            }
-            if (game->grid[2][2] == '_')
-            {
-                blankGrid.push_back({2, 2});
-            }
+            // brute force but sadly I cant come up with a clean and efficient code
+            if (game->grid[i * 2][0] == '_') blankGrid.push_back({i * 2, 0});
+            if (game->grid[1][1] == '_') blankGrid.push_back({1, 1});
+            if (game->grid[0][i * 2] == '_') blankGrid.push_back({0, i * 2});
             if (blankGrid.size() == 2)
             {
-                validAttackPositions.insert(validAttackPositions.end(), blankGrid.begin(), blankGrid.end());
+                validAttackPositions.push_back(blankGrid[0]);
+                validAttackPositions.push_back(blankGrid[0]);
             }
-
-            blankGrid = {{1, 1}};
-            if (game->grid[2][0] == '_')
-            {
-                blankGrid.push_back({2, 0});
-            }
-            if (game->grid[0][2] == '_')
-            {
-                blankGrid.push_back({0, 2});
-            }
-            if (blankGrid.size() == 2)
-            {
-                validAttackPositions.insert(validAttackPositions.end(), blankGrid.begin(), blankGrid.end());
-            }
-        } 
+            blankGrid = {};
+        }
     }
-
-    cout << validAttackPositions.size() << endl;
     return validAttackPositions;
-
-
 }
 
 vector<vector<int>> getValidMovePosition(Game* game, char currChess, const char nextChess) // nextChess is the chess to be placed NEXT round
@@ -266,14 +243,12 @@ vector<vector<int>> getValidMovePosition(Game* game, char currChess, const char 
     vector<int> winablePosition = getWinablePosition(game, currChess);
     if (winablePosition.size() > 0)
     {
-        cout << "winable position: " << winablePosition[0] << " " << winablePosition[1] << endl;
         return {winablePosition};
     }
 
     vector<int> opponentWinablePosition = getWinablePosition(game, nextChess);
     if (opponentWinablePosition.size() > 0)
     {
-        cout << "opponent winable position: " << opponentWinablePosition[0] << " " << opponentWinablePosition[1] << endl;
         return {opponentWinablePosition};
     }
 
@@ -301,14 +276,7 @@ ListNode* backtrack(ListNode* end, Game* game, const Player* user, const Player*
     validMovePositions = getValidMovePosition(game, currChess, nextChess);
     if (validMovePositions.size() == 0)
     {
-        cout << "couldn't get anymore valid move position at round: " << rounds << endl;
         return nullptr;
-    }
-
-    cout << "Number of possible moves in round " << rounds << ": " << validMovePositions.size() << ", which are:" << endl;
-    for (auto i : validMovePositions)
-    {
-        cout << i[0] << " " << i[1] << endl;
     }
 
     for (auto pos: validMovePositions)
@@ -336,6 +304,7 @@ int main()
     Player* user;
     Player* opponent;
     map<int, Player*>* players = new map<int, Player*>();
+    int rounds = 0;
 
     inputPlayer(user, opponent, players);
     inputGrid();
@@ -347,17 +316,28 @@ int main()
         cout << "malloc failed";
         return 1;
     }
+    for (int i = 0; i < 3; i++) // This function will be changed when game grid input is possible
+    {
+        for (int j = 0; j < 3; j++)
+        {
+            if (game->grid[i][j] != '_')
+            {
+                rounds++;
+            }
+        }
+    }
     // Linked list / stack is viable data structure but I just chose the former one
-    ListNode* head = backtrack(end, game, user, opponent, players, 0); // round 0 refers to no chess placed
+    ListNode* head = backtrack(end, game, user, opponent, players, rounds); // round 0 refers to no chess placed
+    delete user;
+    delete opponent;
+    free(end);
     if (head == nullptr)
     {
         cout << "no solution found\n";
     }
 
-    cout << "backtracking done\n";
-
     ofstream outputFile;
-    outputFile.open("step.csv");
+    outputFile.open("step.csv"); // documentation purpose
     while (head != end)
     {
         game->grid[head->rowNum][head->colNum] = head->placedChess;
