@@ -1,20 +1,12 @@
 
 row: 1
-column: 0
-Placed Chess: O
+column: 1
+Placed Chess: X
 
 row: 1
 column: 2
-Placed Chess: X
-
-row: 0
-column: 0
 Placed Chess: O
 
 row: 2
-column: 0
+column: 1
 Placed Chess: X
-
-row: 2
-column: 2
-Placed Chess: O
