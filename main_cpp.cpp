@@ -215,7 +215,6 @@ stack<array<int, 2>> getValidMovePosition(Game *game, char currChess, const char
     array<int, 2> winablePosition = getWinablePosition(game, currChess);
     if (winablePosition[0] != -1)
     {
-        cout << "get winable posistion" << winablePosition.size() << endl;
         stack<array<int, 2>> return_value;
         return_value.push({winablePosition[0], winablePosition[1]});
         return return_value;
@@ -236,10 +235,8 @@ ListNode *backtrack(ListNode *end, Game *game, const Player *user, const Player 
 {
     if (rounds >= 4)
     {
-        cout << "4 rounds or more\n";
         if (winCheck(game, opponent->symbol) || rounds > 9)
         {
-            cout << "maxed\n";
             return nullptr;
         }
         else if (winCheck(game, user->symbol))
@@ -329,6 +326,9 @@ int main()
         head = head->next;
     }
     outputFile.close();
-
+    cout << "\nPress any key to exit\n";
+    cin.clear();
+    cin.sync();
+    getchar();
     return 0;
 }
